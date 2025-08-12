@@ -5,6 +5,7 @@ import { useMemos } from '@/hooks/useMemos'
 import { Memo, MemoFormData } from '@/types/memo'
 import MemoList from '@/components/MemoList'
 import MemoForm from '@/components/MemoForm'
+import MemoViewer from '@/components/MemoViewer'
 
 export default function Home() {
   const {
@@ -22,27 +23,56 @@ export default function Home() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null)
+  const [viewingMemo, setViewingMemo] = useState<Memo | null>(null)
 
-  const handleCreateMemo = (formData: MemoFormData) => {
-    createMemo(formData)
-    setIsFormOpen(false)
+  const handleCreateMemo = async (formData: MemoFormData) => {
+    try {
+      const result = await createMemo(formData)
+      if (result) {
+        setIsFormOpen(false)
+      } else {
+        alert('메모 생성에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('메모 생성 중 오류:', error)
+      alert('메모 생성 중 오류가 발생했습니다.')
+    }
   }
 
-  const handleUpdateMemo = (formData: MemoFormData) => {
+  const handleUpdateMemo = async (formData: MemoFormData) => {
     if (editingMemo) {
-      updateMemo(editingMemo.id, formData)
-      setEditingMemo(null)
+      try {
+        const success = await updateMemo(editingMemo.id, formData)
+        if (success) {
+          setEditingMemo(null)
+          setIsFormOpen(false)
+        } else {
+          alert('메모 수정에 실패했습니다.')
+        }
+      } catch (error) {
+        console.error('메모 수정 중 오류:', error)
+        alert('메모 수정 중 오류가 발생했습니다.')
+      }
     }
   }
 
   const handleEditMemo = (memo: Memo) => {
     setEditingMemo(memo)
     setIsFormOpen(true)
+    setViewingMemo(null) // 상세 보기 닫기
+  }
+
+  const handleViewMemo = (memo: Memo) => {
+    setViewingMemo(memo)
   }
 
   const handleCloseForm = () => {
     setIsFormOpen(false)
     setEditingMemo(null)
+  }
+
+  const handleCloseViewer = () => {
+    setViewingMemo(null)
   }
 
   return (
@@ -93,6 +123,7 @@ export default function Home() {
           onCategoryChange={filterByCategory}
           onEditMemo={handleEditMemo}
           onDeleteMemo={deleteMemo}
+          onViewMemo={handleViewMemo}
           stats={stats}
         />
       </main>
@@ -103,6 +134,15 @@ export default function Home() {
         onClose={handleCloseForm}
         onSubmit={editingMemo ? handleUpdateMemo : handleCreateMemo}
         editingMemo={editingMemo}
+      />
+
+      {/* 메모 상세 보기 */}
+      <MemoViewer
+        memo={viewingMemo}
+        isOpen={!!viewingMemo}
+        onClose={handleCloseViewer}
+        onEdit={handleEditMemo}
+        onDelete={deleteMemo}
       />
     </div>
   )
