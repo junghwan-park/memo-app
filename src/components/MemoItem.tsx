@@ -1,14 +1,16 @@
 'use client'
 
+import MDEditor from '@uiw/react-md-editor'
 import { Memo, MEMO_CATEGORIES } from '@/types/memo'
 
 interface MemoItemProps {
   memo: Memo
   onEdit: (memo: Memo) => void
   onDelete: (id: string) => void
+  onView: (memo: Memo) => void
 }
 
-export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
+export default function MemoItem({ memo, onEdit, onDelete, onView }: MemoItemProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('ko-KR', {
@@ -18,6 +20,17 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  const handleDelete = async () => {
+    if (window.confirm('정말로 이 메모를 삭제하시겠습니까?')) {
+      try {
+        await onDelete(memo.id)
+      } catch (error) {
+        console.error('메모 삭제 중 오류:', error)
+        alert('메모 삭제 중 오류가 발생했습니다.')
+      }
+    }
   }
 
   const getCategoryColor = (category: string) => {
@@ -32,7 +45,10 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+    <div
+      className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+      onClick={() => onView(memo)}
+    >
       {/* 헤더 */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -53,7 +69,7 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
         </div>
 
         {/* 액션 버튼 */}
-        <div className="flex gap-2 ml-4">
+        <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onEdit(memo)}
             className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -74,11 +90,7 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
             </svg>
           </button>
           <button
-            onClick={() => {
-              if (window.confirm('정말로 이 메모를 삭제하시겠습니까?')) {
-                onDelete(memo.id)
-              }
-            }}
+            onClick={handleDelete}
             className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="삭제"
           >
@@ -101,9 +113,20 @@ export default function MemoItem({ memo, onEdit, onDelete }: MemoItemProps) {
 
       {/* 내용 */}
       <div className="mb-4">
-        <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
-          {memo.content}
-        </p>
+        <div
+          className="text-gray-700 text-sm leading-relaxed overflow-hidden"
+          style={{ maxHeight: '300px' }}
+          data-color-mode="light"
+        >
+          <MDEditor.Markdown
+            source={memo.content}
+            style={{
+              backgroundColor: 'transparent',
+              color: '#374151',
+              fontSize: '14px'
+            }}
+          />
+        </div>
       </div>
 
       {/* 태그 */}
